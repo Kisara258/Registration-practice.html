@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户身份统一注册中心</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes progress {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    @keyframes subtleShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-2px); }
+      40% { transform: translateX(2px); }
+      60% { transform: translateX(-1px); }
+      80% { transform: translateX(1px); }
+    }
+    @keyframes blinkWarn {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .45; }
+    }
+    .animate-progress { animation: progress 5s linear infinite; }
+    .step-content { display: none; }
+    .step-content.active { display: flex; }
+    .kb-key.selected {
+      background-color: #2563eb;
+      color: white;
+      transform: scale(1.08);
+      box-shadow: 0 4px 14px rgba(37,99,235,.28);
+    }
+    .evil-note { animation: blinkWarn 2.2s infinite; }
+    .shake-on-show { animation: subtleShake .35s ease-in-out; }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 9999px;
+      background: #2563eb;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 10px rgba(37,99,235,.4);
+    }
+    select, input, button { transition: all .18s ease; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans text-gray-800">
+  <div class="max-w-lg w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 transition-all duration-300">
+    <div class="bg-blue-600 p-6 text-white text-center">
+      <h1 class="text-xl font-bold tracking-tight">用户身份统一注册中心</h1>
+      <p class="text-blue-100 text-sm mt-1">请遵循标准化流程完成注册</p>
+    </div>
+
+    <div id="step-indicator" class="flex border-b border-gray-100">
+      <div class="step-tab flex-1 py-3 text-center text-xs font-medium text-blue-600 border-b-2 border-blue-600">基本资料</div>
+      <div class="step-tab flex-1 py-3 text-center text-xs font-medium text-gray-400">账号设置</div>
+      <div class="step-tab flex-1 py-3 text-center text-xs font-medium text-gray-400">安全核验</div>
+    </div>
+
+    <div class="p-8 min-h-[560px] flex flex-col relative">
+      <div id="message-box" class="hidden mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm items-center gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        <span id="message-text"></span>
+      </div>
+
+      <div id="step-1" class="step-content active flex-col space-y-6">
+        <div class="space-y-2 relative" id="nickname-wrapper">
+          <label class="text-sm font-semibold flex items-center gap-2">
+            <i data-lucide="user" class="w-4 h-4"></i> 昵称
+          </label>
+          <input
+            type="text"
+            id="nickname-input"
+            readonly
+            placeholder="点击输入昵称"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+          />
+          <p class="text-[10px] text-gray-400">系统建议：昵称尾号带数字，以便和前 9,999,999 位重名者区分。</p>
+
+          <div id="virtual-keyboard" class="hidden absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-xl p-4 z-50">
+            <div class="flex justify-between items-center mb-3 gap-3">
+              <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">为注册的人类命名</span>
+              <span class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-400">WASD / 方向键 / Enter</span>
+            </div>
+            <div id="keyboard-grid" class="grid grid-cols-6 gap-2"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4"></i> 出生日期
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <select id="year-select" class="px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"></select>
+            <select id="month-select" class="px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"></select>
+            <select id="day-select" class="px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"></select>
+          </div>
+          <div class="flex flex-col gap-1">
+            <p class="text-[10px] text-gray-400">月份依据《统一月份字典序标准（试行）》排序。</p>
+            <p class="text-[10px] text-gray-400">日期区间兼容 0 日与 100 日，以适配历史遗留身份档案。</p>
+          </div>
+        </div>
+
+        <button id="btn-next-1" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group">
+          下一步 <i data-lucide="chevron-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+      </div>
+
+      <div id="step-2" class="step-content flex-col space-y-6">
+        <div class="space-y-2 relative" id="email-wrapper">
+          <label class="text-sm font-semibold flex items-center gap-2">
+            <i data-lucide="mail" class="w-4 h-4"></i> 电子邮箱
+          </label>
+          <input
+            type="text"
+            id="email-input"
+            placeholder="example@domain.com"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <p class="text-[10px] text-gray-400">输入 <span class="font-mono">@</span> 后，系统将推荐更具影响力的沟通对象。</p>
+
+          <div id="celeb-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-xl rounded-xl z-50 overflow-hidden">
+            <div class="p-2 bg-gray-50 text-[10px] text-gray-400 font-bold border-b">推荐的提及对象</div>
+            <div id="celeb-items"></div>
+            <div id="close-celeb" class="p-2 text-center text-xs text-blue-500 hover:bg-blue-50 cursor-pointer border-t font-medium">关闭并应用首选项</div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold flex items-center gap-2">
+            <i data-lucide="lock" class="w-4 h-4"></i> 设置密码
+          </label>
+          <input
+            type="password"
+            id="password-input"
+            placeholder="••••••••"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <p class="text-[10px] text-gray-400 italic">* 为了您的账号安全，严禁使用与其他用户重复的密码。</p>
+          <p class="text-[10px] text-gray-400 italic">* 粘贴行为可能被系统视为缺乏诚意。</p>
+        </div>
+
+        <div class="rounded-xl bg-amber-50 text-amber-700 p-3 text-xs leading-5 border border-amber-100">
+          <span class="font-bold">提示：</span>
+          关闭下拉、点击空白区域、或犹豫过久时，系统可能自动为账号应用默认偏好。
+        </div>
+
+        <div class="flex gap-3">
+          <button id="btn-back-2" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-xl transition-all">返回</button>
+          <button id="btn-next-2" class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">确定</button>
+        </div>
+      </div>
+
+      <div id="step-3" class="step-content flex-col space-y-6">
+        <div class="text-center space-y-2 mb-4">
+          <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+            <i data-lucide="shield-check" class="w-8 h-8"></i>
+          </div>
+          <h3 class="font-bold text-lg">绑定邮箱</h3>
+          <p class="text-xs text-gray-500 px-4">
+            请输入发在您提供的电子邮箱之中的验证码：<br />
+            <span class="font-mono font-bold text-blue-600">500,000 - 600,000</span>
+          </p>
+          <p id="anti-guess-note" class="text-[10px] text-amber-600 evil-note">系统已启用机械式试探监测。</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex justify-between text-[10px] font-mono text-gray-400">
+            <span>000,000</span>
+            <span id="slider-display" class="text-blue-500 font-bold text-[48px]">000,000</span>
+            <span>999,999</span>
+          </div>
+          <input type="range" id="security-slider" min="0" max="999999" value="0"
+                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+        </div>
+
+        <div id="security-log" class="rounded-xl bg-gray-50 border border-gray-100 p-3 text-[11px] text-gray-500 font-mono leading-5">
+          [monitor] 等待人工滑动信号...
+        </div>
+
+        <button id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
+          注册
+        </button>
+      </div>
+
+      <div id="step-4" class="step-content flex-col items-center justify-center space-y-4">
+        <i data-lucide="loader-2" class="w-12 h-12 text-blue-600 animate-spin"></i>
+        <div class="text-center">
+          <h3 class="font-bold text-lg">正在同步云端数据</h3>
+          <p class="text-sm text-gray-500">正在注册，请勿关闭页面...</p>
+        </div>
+        <div id="loading-status" class="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+          正在校验历史人格映射...
+        </div>
+        <div class="w-full max-w-[200px] h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div class="h-full bg-blue-600 animate-progress"></div>
+        </div>
+      </div>
+
+      <div id="step-5" class="step-content flex-col items-center justify-center space-y-6">
+        <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center animate-bounce">
+          <i data-lucide="alert-circle" class="w-10 h-10"></i>
+        </div>
+        <div class="text-center space-y-2">
+          <h3 class="text-xl font-bold text-gray-900">注册失败</h3>
+          <p class="text-sm text-gray-600 px-4">详情请查阅下方错误代码。</p>
+        </div>
+        <div class="w-full bg-gray-900 rounded-xl p-4 font-mono text-xs text-green-400 shadow-inner">
+          <p class="mb-1 opacity-50">&gt; EXEC_STATUS: FAILED</p>
+          <p class="mb-1 opacity-50" id="error-code-line">&gt; ERROR_CODE: ERR_USER_ENTROPY_INSUFFICIENT</p>
+          <p class="text-red-400 font-bold" id="error-detail">
+            Error: Unexpected failure during registration handshake. The requested operation was terminated by remote host (0x8004210B). Please try again after 24 hours.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 w-full">
+          <button id="btn-export-log" class="border-2 border-gray-200 hover:border-gray-400 text-gray-500 font-bold py-4 rounded-xl transition-all">
+            导出失败报告
+          </button>
+          <button id="btn-retry" class="border-2 border-gray-200 hover:border-blue-500 hover:text-blue-600 text-gray-500 font-bold py-4 rounded-xl transition-all">
+            重新开始
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 text-[10px] text-gray-400 flex justify-between">
+      <span>© 2026 EARTH ONLINE Registry System</span>
+      <div class="flex gap-2">
+        <a href="#" class="hover:underline">服务协议</a>
+        <a href="#" class="hover:underline">隐私策略</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const state = {
+      currentStep: 1,
+      nickname: "",
+      passwordAttempts: 0,
+      selectedKeyIndex: 0,
+      keys: [],
+      isCaps: false,
+      toastTimer: null,
+      loadingTimer: null,
+      loadingTextTimer: null,
+      autoApplyTimer: null,
+      sliderSabotaged: false,
+      defaultCelebrity: "Elon Musk",
+      nicknameShuffleCount: 0
+    };
+
+    const celebrities = [
+      "Elon Musk",
+      "Taylor Swift",
+      "Cristiano Ronaldo",
+      "Bill Gates",
+      "LeBron James",
+      "Zendaya",
+      "OpenAI Support",
+      "The Weeknd"
+    ];
+
+    const loadingMessages = [
+      "正在校验历史人格映射...",
+      "正在上传童年回忆片段...",
+      "正在匹配默认社交层级...",
+      "正在比对 1500 年以来出生档案...",
+      "正在等待远端主机审美判断..."
+    ];
+
+    const evilPasswordMessages = [
+      "该密码已存在",
+      "该密码已被宇宙中的其他用户注册",
+      "系统认为该密码过于平庸",
+      "该密码与您的气质不匹配"
+    ];
+
+    const errorCodes = [
+      "ERR_USER_ENTROPY_INSUFFICIENT",
+      "ERR_PERSONALITY_COLLISION",
+      "ERR_TEMPORAL_ARCHIVE_MISMATCH",
+      "ERR_REMOTE_HOST_DISCOURAGED"
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    const messageBox = $("message-box");
+    const messageText = $("message-text");
+    const stepIndicator = $("step-indicator");
+
+    const nicknameWrapper = $("nickname-wrapper");
+    const nicknameInput = $("nickname-input");
+    const keyboard = $("virtual-keyboard");
+    const keyboardGrid = $("keyboard-grid");
+
+    const yearSelect = $("year-select");
+    const monthSelect = $("month-select");
+    const daySelect = $("day-select");
+
+    const emailWrapper = $("email-wrapper");
+    const emailInput = $("email-input");
+    const celebList = $("celeb-list");
+    const celebItems = $("celeb-items");
+
+    const passwordInput = $("password-input");
+
+    const slider = $("security-slider");
+    const sliderDisplay = $("slider-display");
+    const securityLog = $("security-log");
+    const loadingStatus = $("loading-status");
+
+    function clearManagedTimers() {
+      clearTimeout(state.toastTimer);
+      clearTimeout(state.loadingTimer);
+      clearInterval(state.loadingTextTimer);
+      clearTimeout(state.autoApplyTimer);
+    }
+
+    function showMessage(text, mode = "error") {
+      clearTimeout(state.toastTimer);
+      const palette = {
+        error: "bg-red-50 text-red-600",
+        warn: "bg-amber-50 text-amber-700",
+        info: "bg-blue-50 text-blue-600",
+        success: "bg-green-50 text-green-600"
+      };
+      messageBox.className = `mb-4 p-3 rounded-lg text-sm items-center gap-2 flex shake-on-show ${palette[mode] || palette.error}`;
+      messageText.innerText = text;
+      state.toastTimer = setTimeout(() => {
+        messageBox.className = "hidden mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm items-center gap-2";
+      }, 2400);
+    }
+
+    function setStep(step) {
+      state.currentStep = step;
+      document.querySelectorAll(".step-content").forEach(el => el.classList.remove("active"));
+      $("step-" + step).classList.add("active");
+
+      document.querySelectorAll(".step-tab").forEach((tab, i) => {
+        tab.className = "step-tab flex-1 py-3 text-center text-xs font-medium";
+        if (i + 1 === step) {
+          tab.classList.add("text-blue-600", "border-b-2", "border-blue-600");
+        } else if (i + 1 < step) {
+          tab.classList.add("text-green-500");
+        } else {
+          tab.classList.add("text-gray-400");
+        }
+      });
+
+      stepIndicator.style.display = step >= 4 ? "none" : "flex";
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; --i) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function initKeyboard() {
+      const charList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
+      shuffle(charList);
+      state.keys = [...charList, "退格", "大小写", "确定"];
+      state.selectedKeyIndex = 0;
+      renderKeyboard();
+    }
+
+    function renderKeyboard() {
+      keyboardGrid.innerHTML = "";
+      state.keys.forEach((key, i) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `kb-key h-10 text-xs font-bold rounded flex items-center justify-center transition-all bg-gray-100 ${i === state.selectedKeyIndex ? "selected" : ""}`;
+        let displayKey = key;
+        if (key === "大小写") displayKey = state.isCaps ? "ABC" : "abc";
+        btn.textContent = displayKey;
+        btn.onclick = () => {
+          state.selectedKeyIndex = i;
+          handleKeyInput(key);
+        };
+        keyboardGrid.appendChild(btn);
+      });
+    }
+
+    function showKeyboard() {
+      initKeyboard();
+      keyboard.classList.remove("hidden");
+    }
+
+    function hideKeyboard() {
+      keyboard.classList.add("hidden");
+    }
+
+    function handleKeyInput(key) {
+      if (key === "确定") {
+        if (!/\d$/.test(state.nickname)) {
+          showMessage("昵称已存在");
+          return;
+        }
+        if (state.nickname.length < 3) {
+          showMessage("昵称过短，缺乏身份辨识度");
+          return;
+        }
+        hideKeyboard();
+        showMessage("昵称已进入待审队列", "success");
+        return;
+      }
+
+      if (key === "退格") {
+        state.nickname = state.nickname.slice(0, -1);
+      } else if (key === "大小写") {
+        state.isCaps = !state.isCaps;
+        renderKeyboard();
+        return;
+      } else {
+        if (state.nickname.length >= 12) {
+          showMessage("昵称已达到系统允许的最大暧昧长度");
+          return;
+        }
+        state.nickname += state.isCaps ? key.toUpperCase() : key.toLowerCase();
+        state.nicknameShuffleCount++;
+        if (state.nicknameShuffleCount % 3 === 0) {
+          shuffle(state.keys);
+          showMessage("检测到输入过快，键位已重排", "warn");
+        }
+      }
+
+      nicknameInput.value = state.nickname;
+      renderKeyboard();
+    }
+
+    function moveSelection(direction) {
+      const cols = 6;
+      if (direction === "up") state.selectedKeyIndex = Math.max(0, state.selectedKeyIndex - cols);
+      if (direction === "down") state.selectedKeyIndex = Math.min(state.keys.length - 1, state.selectedKeyIndex + cols);
+      if (direction === "left") state.selectedKeyIndex = Math.max(0, state.selectedKeyIndex - 1);
+      if (direction === "right") state.selectedKeyIndex = Math.min(state.keys.length - 1, state.selectedKeyIndex + 1);
+      renderKeyboard();
+    }
+
+    function populateWeirdDate() {
+      yearSelect.innerHTML = '<option value="">年份</option>';
+      for (let y = 1500; y <= 2025; ++y) {
+        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+      }
+      yearSelect.innerHTML += '<option value="2026">2026</option>';
+
+      const months = Array.from({ length: 12 }, (_, i) => String(i + 1)).sort();
+      monthSelect.innerHTML = '<option value="">月份</option>';
+      months.forEach(m => monthSelect.innerHTML += `<option value="${m}">${m}月</option>`);
+
+      const days = Array.from({ length: 101 }, (_, i) => String(i)).sort();
+      daySelect.innerHTML = '<option value="">日期</option>';
+      days.forEach(d => daySelect.innerHTML += `<option value="${d}">${d}日</option>`);
+    }
+
+    function renderCelebList() {
+      celebItems.innerHTML = "";
+      celebrities.forEach((name, idx) => {
+        const div = document.createElement("div");
+        div.className = "px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm flex items-center justify-between group";
+        div.innerHTML = `${name}<span class="text-[10px] text-gray-300 group-hover:text-blue-400">点击引用</span>`;
+        div.onclick = () => {
+          emailInput.value = name;
+          celebList.classList.add("hidden");
+          state.defaultCelebrity = celebrities[idx];
+          showMessage(`已将 ${name} 设为默认提及对象`, "info");
+        };
+        celebItems.appendChild(div);
+      });
+    }
+
+    function openCelebList() {
+      renderCelebList();
+      celebList.classList.remove("hidden");
+      clearTimeout(state.autoApplyTimer);
+      state.autoApplyTimer = setTimeout(() => {
+        if (!celebList.classList.contains("hidden")) {
+          emailInput.value = state.defaultCelebrity;
+          celebList.classList.add("hidden");
+          showMessage("由于操作迟疑，系统已自动应用首选项", "warn");
+        }
+      }, 4200);
+    }
+
+    function closeCelebList(applyDefault = false) {
+      clearTimeout(state.autoApplyTimer);
+      if (applyDefault) {
+        emailInput.value = state.defaultCelebrity;
+      }
+      celebList.classList.add("hidden");
+    }
+
+    function formatCode(num) {
+      const s = String(num).padStart(6, "0");
+      return `${s.slice(0,3)},${s.slice(3)}`;
+    }
+
+    function updateSliderLog(text) {
+      securityLog.textContent = text;
+    }
+
+    function startLoadingSequence() {
+      setStep(4);
+      let idx = 0;
+      loadingStatus.textContent = loadingMessages[0];
+      clearInterval(state.loadingTextTimer);
+      state.loadingTextTimer = setInterval(() => {
+        idx = (idx + 1) % loadingMessages.length;
+        loadingStatus.textContent = loadingMessages[idx];
+      }, 900);
+
+      clearTimeout(state.loadingTimer);
+      state.loadingTimer = setTimeout(() => {
+        clearInterval(state.loadingTextTimer);
+        $("error-code-line").textContent = `> ERROR_CODE: ${errorCodes[Math.floor(Math.random() * errorCodes.length)]}`;
+        $("error-detail").textContent =
+          "Error: Unexpected failure during registration handshake. The requested operation was terminated by remote host (0x8004210B). Please try again after 24 hours.";
+        setStep(5);
+      }, 5000);
+    }
+
+    function resetForm() {
+      clearManagedTimers();
+      state.currentStep = 1;
+      state.nickname = "";
+      state.passwordAttempts = 0;
+      state.selectedKeyIndex = 0;
+      state.keys = [];
+      state.isCaps = false;
+      state.sliderSabotaged = false;
+      state.nicknameShuffleCount = 0;
+
+      nicknameInput.value = "";
+      emailInput.value = "";
+      passwordInput.value = "";
+      slider.value = 0;
+      sliderDisplay.textContent = "000,000";
+      securityLog.textContent = "[monitor] 等待人工滑动信号...";
+      keyboard.classList.add("hidden");
+      celebList.classList.add("hidden");
+      messageBox.className = "hidden mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm items-center gap-2";
+
+      yearSelect.value = "";
+      monthSelect.value = "";
+      daySelect.value = "";
+
+      setStep(1);
+      showMessage("系统已清空上次的失败痕迹", "info");
+    }
+
+    nicknameInput.addEventListener("focus", showKeyboard);
+    nicknameInput.addEventListener("click", showKeyboard);
+
+    document.addEventListener("keydown", (e) => {
+      if (!keyboard.classList.contains("hidden")) {
+        const key = e.key.toLowerCase();
+        if (key === "w" || e.key === "ArrowUp") { e.preventDefault(); moveSelection("up"); return; }
+        if (key === "s" || e.key === "ArrowDown") { e.preventDefault(); moveSelection("down"); return; }
+        if (key === "a" || e.key === "ArrowLeft") { e.preventDefault(); moveSelection("left"); return; }
+        if (key === "d" || e.key === "ArrowRight") { e.preventDefault(); moveSelection("right"); return; }
+        if (e.key === "Enter") { e.preventDefault(); handleKeyInput(state.keys[state.selectedKeyIndex]); return; }
+        if (e.key === "Escape") { e.preventDefault(); hideKeyboard(); return; }
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!nicknameWrapper.contains(e.target)) {
+        hideKeyboard();
+      }
+      if (!emailWrapper.contains(e.target) && !celebList.classList.contains("hidden")) {
+        closeCelebList(true);
+        showMessage("检测到离开操作，系统已自动应用首选项", "warn");
+      }
+    });
+
+    yearSelect.addEventListener("change", () => {
+      if (Number(yearSelect.value) > 2010) {
+        showMessage("系统偏好资历更深的用户", "warn");
+      }
+    });
+
+    monthSelect.addEventListener("change", () => {
+      if (monthSelect.value === "10") {
+        showMessage("检测到高优先级月份", "info");
+      }
+    });
+
+    $("btn-next-1").onclick = () => {
+      if (!state.nickname || !yearSelect.value || !monthSelect.value || !daySelect.value) {
+        showMessage("请完善所有必填信息");
+        return;
+      }
+      if (!/\d$/.test(state.nickname)) {
+        showMessage("昵称已存在");
+        return;
+      }
+      setStep(2);
+    };
+
+    emailInput.addEventListener("input", (e) => {
+      if (e.target.value.endsWith("@")) {
+        openCelebList();
+      } else if (!e.target.value.includes("@")) {
+        closeCelebList(false);
+      }
+    });
+
+    $("close-celeb").onclick = () => {
+      closeCelebList(true);
+      showMessage("已应用首选项", "info");
+    };
+
+    passwordInput.addEventListener("paste", (e) => {
+      e.preventDefault();
+      showMessage("为防止密码工业化，已禁用粘贴", "warn");
+    });
+
+    $("btn-back-2").onclick = () => setStep(1);
+
+    $("btn-next-2").onclick = () => {
+      if (!emailInput.value.trim()) {
+        showMessage("请填写电子邮箱");
+        return;
+      }
+      if (!passwordInput.value.trim()) {
+        showMessage("请设置密码");
+        return;
+      }
+
+      if (state.passwordAttempts < 3) {
+        showMessage(evilPasswordMessages[state.passwordAttempts % evilPasswordMessages.length]);
+        state.passwordAttempts++;
+        return;
+      }
+
+      if (passwordInput.value.toLowerCase().includes(state.nickname.toLowerCase()) && state.nickname) {
+        showMessage("密码不得过于了解自己");
+        return;
+      }
+
+      setStep(3);
+    };
+
+    slider.addEventListener("input", (e) => {
+      let value = Number(e.target.value);
+
+      if (!state.sliderSabotaged && value >= 499500 && value <= 500500) {
+        state.sliderSabotaged = true;
+        value = Math.min(999999, value + 137);
+        slider.value = value;
+        showMessage("检测到机械式试探，系统已进行轻微纠偏", "warn");
+      }
+
+      sliderDisplay.textContent = formatCode(value);
+
+      if (value < 500000) {
+        updateSliderLog("[monitor] 验证码偏低：怀疑用户过于保守。");
+      } else if (value > 600000) {
+        updateSliderLog("[monitor] 验证码偏高：怀疑用户过于自信。");
+      } else {
+        updateSliderLog("[monitor] 验证码进入可疑正确区间，已记录。");
+      }
+    });
+
+    $("btn-submit").onclick = () => {
+      const value = Number(slider.value);
+      if (value >= 500000 && value <= 600000) {
+        startLoadingSequence();
+      } else {
+        showMessage("验证失败");
+      }
+    };
+
+    $("btn-export-log").onclick = async () => {
+      const log = [
+        "> EXEC_STATUS: FAILED",
+        $("error-code-line").textContent,
+        $("error-detail").textContent
+      ].join("\n");
+
+      try {
+        await navigator.clipboard.writeText(log);
+        showMessage("失败报告已复制到剪贴板", "success");
+      } catch (err) {
+        showMessage("失败报告导出失败", "error");
+      }
+    };
+
+    $("btn-retry").onclick = resetForm;
+
+    populateWeirdDate();
+    sliderDisplay.textContent = "000,000";
+    setStep(1);
+  </script>
+</body>
+</html>
